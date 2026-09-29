@@ -208,12 +208,12 @@ def draw_display(canvas, font_file, lines, cars, dests, mins):
     green_color = graphics.Color(50,150,0)
 
     canvas.Clear()
-    graphics.DrawText(canvas, font, 2, 7, red_color, "LN CAR  DEST")
-    graphics.DrawText(canvas, font, 109, 7, red_color, "MIN")
+    graphics.DrawText(canvas, font, 0, 7, red_color, "LN CAR  DEST")
+    graphics.DrawText(canvas, font, 111, 7, red_color, "MIN")
 
     i = 0
     for line in lines:
-        graphics.DrawText(canvas, font, 2, 15 + i*height_delta, yellow_color, line)
+        graphics.DrawText(canvas, font, 0, 15 + i*height_delta, yellow_color, line)
         i += 1
 
     i = 0
@@ -234,7 +234,7 @@ def draw_display(canvas, font_file, lines, cars, dests, mins):
 
     i = 0
     for time in mins:
-        x = total_width - len(time)*width_delta - 1   # Add one to account for space at end
+        x = total_width - len(time)*width_delta + 1  # Add one to account for space at end
         graphics.DrawText(canvas, font, x, 15 + i*height_delta, yellow_color, time)
         i += 1
 
