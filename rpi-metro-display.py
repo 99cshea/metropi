@@ -22,6 +22,7 @@ import ctypes
 import traceback
 import time
 import sys
+from pathlib import Path
 import requests
 import json
 import logging
@@ -542,13 +543,28 @@ def get_state():
     return respond_success(station)
 
 
+def load_api_key():
+    key_file = Path.home() / ".config" / "metropi" / "wmata-api-key"
+    try:
+        api_key = key_file.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        sys.exit("Error: WMATA API key file is missing: {}".format(key_file))
+    except (OSError, UnicodeError):
+        sys.exit("Error: WMATA API key file is unreadable: {}".format(key_file))
+    if not api_key:
+        sys.exit("Error: WMATA API key file is empty: {}".format(key_file))
+    return api_key
+
+
 def main():
     global stations_file
     global lines_file
 
-    if len(sys.argv) != 8:
-        print("Usage rpi-metro-display <log_file> <api_key> <initial_station_code> <initial_direction_code> <font_file> <lines_file> <stations_file>")
+    if len(sys.argv) != 7:
+        print("Usage rpi-metro-display <log_file> <initial_station_code> <initial_direction_code> <font_file> <lines_file> <stations_file>")
         sys.exit(2)
+
+    api_key = load_api_key()
 
     sys.excepthook = exception_hook
     logger = logging.getLogger()
@@ -565,13 +581,13 @@ def main():
     #logger.addHandler(sys_log_handler)
 
     station_code_receiver, station_code_sender = Pipe()
-    station_code_sender.send(sys.argv[3])
+    station_code_sender.send(sys.argv[2])
     direction_receiver, direction_sender = Pipe()
-    direction_sender.send(sys.argv[4])
-    lines_file = Value(ctypes.c_wchar_p, sys.argv[6])
-    stations_file = Value(ctypes.c_wchar_p, sys.argv[7])
-    server = Process(target = serve, args=(sys.argv[3],sys.argv[4],station_code_sender,direction_sender,))
-    run_displays = Process(target = run_display, args=(sys.argv[2],station_code_receiver,direction_receiver,sys.argv[5],))
+    direction_sender.send(sys.argv[3])
+    lines_file = Value(ctypes.c_wchar_p, sys.argv[5])
+    stations_file = Value(ctypes.c_wchar_p, sys.argv[6])
+    server = Process(target = serve, args=(sys.argv[2],sys.argv[3],station_code_sender,direction_sender,))
+    run_displays = Process(target = run_display, args=(api_key,station_code_receiver,direction_receiver,sys.argv[4],))
     server.start()
     run_displays.start()
 
