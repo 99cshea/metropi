@@ -294,6 +294,47 @@ _NOTE: the log file will be created the first time the program runs. As of this 
 
 _NOTE: ordering matters!_
 
+### Configure the sign's WMATA key
+
+The display reads its key directly from `~/.config/metropi/wmata-api-key` in the
+home directory of the account running Python. Do not put a key in `run.sh`, Git,
+or the display's command-line arguments. Its argument order is now:
+
+```text
+rpi-metro-display.py <log-file> <station-code> <direction-code> <font-file> <lines-file> <stations-file>
+```
+
+Create the file **as the account that runs the sign**. The included
+`metro-display.service` has `User=root`, so use `sudo -H -u root bash` first.
+If your installed service uses a different account, substitute that account;
+check it with `systemctl show metro-display -p User`. An empty User means root.
+For a manually launched sign, use the same account you use to launch it.
+
+In that account's Bash shell, enter the replacement key locally at the hidden
+prompt (it will not enter shell history):
+
+```bash
+install -d -m 700 "$HOME/.config/metropi"
+(umask 077; touch "$HOME/.config/metropi/wmata-api-key")
+chmod 600 "$HOME/.config/metropi/wmata-api-key"
+read -r -s -p 'WMATA API key: ' metropi_key; printf '\n'
+printf '%s\n' "$metropi_key" > "$HOME/.config/metropi/wmata-api-key"
+unset metropi_key
+```
+
+The file stays outside the repository. Startup exits with a clear error if it
+is missing, unreadable, or empty, without printing the key. After saving it,
+exit the account shell if you opened one, then restart the existing service:
+
+```sh
+sudo systemctl restart metro-display
+sudo systemctl status metro-display --no-pager
+```
+
+Systemd launches Python as its configured account. For manual operation, stop
+the existing sign and run `bash run.sh` again as the same account whose home
+contains the key file.
+
 11. Edit `metro-display.service`
 	- Skip this step unless you're either using an OS that isn't DietPi or your `run.sh` script is not in the same location listed in the `ExecStart` line.
 
